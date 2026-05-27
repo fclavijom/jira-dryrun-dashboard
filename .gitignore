@@ -1,0 +1,11 @@
+# Environment
+.env
+venv/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Streamlit credentials
+.streamlit/credentials.toml
