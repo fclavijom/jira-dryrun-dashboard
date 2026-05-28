@@ -4,6 +4,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pathlib import Path
+from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
 JIRA_SCRIPT = Path.home() / ".local/share/aifx/marketplaces/uber-code/devexp-agent-marketplace/claude-code/plugins/core/dev-workflow/jira-tools/skills/jira-tools/scripts/jira-tools.py"
 JQL = 'project = TESTKEEPER AND labels = "DryRun-DQOT" ORDER BY created DESC'
@@ -15,8 +17,11 @@ st.set_page_config(
     layout="wide",
 )
 
+# Auto-refresh cada 15 minutos
+st_autorefresh(interval=15 * 60 * 1000, key="datarefresh")
 
-@st.cache_data(ttl=300, show_spinner="Cargando tickets desde Jira T3...")
+
+@st.cache_data(ttl=900, show_spinner="Cargando tickets desde Jira T3...")
 def fetch_issues() -> pd.DataFrame:
     result = subprocess.run(
         ["python3", str(JIRA_SCRIPT), "search", "--jql", JQL, "--max-results", "1000", "--json"],
@@ -46,10 +51,12 @@ def fetch_issues() -> pd.DataFrame:
 # ─── Título ───────────────────────────────────────────────────────────────────
 st.title("📋 Observaciones DryRun-DQOT · TESTKEEPER")
 
-col_refresh, _ = st.columns([1, 5])
+col_refresh, col_ts, _ = st.columns([1, 2, 3])
 with col_refresh:
     if st.button("🔄 Actualizar", use_container_width=True):
         st.cache_data.clear()
+with col_ts:
+    st.caption(f"Última actualización: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
 try:
     df = fetch_issues()
