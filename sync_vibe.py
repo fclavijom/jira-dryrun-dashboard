@@ -258,6 +258,16 @@ def main():
     data_ts = generate_data_ts(tickets, last_synced, bugs_open)
     print(f"   data.ts: {len(data_ts):,} chars, {len(tickets)} tickets, {bugs_open} open bugs")
 
+    # Write proxy data file for local notify buttons
+    proxy_data = {"tickets": [
+        {"key": t["key"], "url": t["url"], "assignee": t["assignee"],
+         "assigneeEmail": t["assigneeEmail"], "status": t["status"]}
+        for t in tickets
+    ], "last_synced": last_synced}
+    with open("/tmp/tickets_real.json", "w") as f:
+        json.dump(proxy_data, f)
+    print(f"   Proxy data written to /tmp/tickets_real.json")
+
     print("5. Deploying to Vibe...")
     # Write both App.tsx (unchanged) and updated data.ts via vibe-mcp
     import subprocess as sp
