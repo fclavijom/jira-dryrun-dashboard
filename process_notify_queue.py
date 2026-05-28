@@ -43,22 +43,44 @@ def process_notify_all(data):
     ok = 0
     for msg in messages:
         uid = slack_lookup(msg["email"])
-        if uid and slack_send(uid, msg["text"]):
+        if not uid:
+            continue
+        text = f"<@{uid}>\n{msg['text']}"
+        if slack_send(uid, text):
             ok += 1
     print(f"  notify-all: {ok}/{len(messages)} sent")
 
 
 def process_notify_one(data):
     uid = slack_lookup(data["email"])
-    if uid and slack_send(uid, data["text"]):
+    if not uid:
+        print(f"  notify-one: user not found for {data['email']}")
+        return
+    text = f"<@{uid}>\n{data['text']}"
+    if slack_send(uid, text):
         print(f"  notify-one: sent to {data['name']}")
     else:
         print(f"  notify-one: failed for {data['name']}")
 
 
 def process_notify_channel(data):
-    if slack_send(data["channel_id"], data["text"]):
-        print(f"  notify-channel: sent")
+    channel_id = data["channel_id"]
+    assignees = data.get("assignees", [])
+
+    lines = ["*DryRun Dashboard — Open Tickets Summary* (TESTKEEPER · DryRun-DQOT)\n"]
+    for a in assignees:
+        uid = slack_lookup(a["email"])
+        mention = f"<@{uid}>" if uid else a["name"]
+        tks = a.get("tickets", [])
+        n = len(tks)
+        lines.append(f"*{mention} ({a['name']})* — {n} ticket{'s' if n != 1 else ''}:")
+        for t in tks:
+            lines.append(f"• <{t['url']}> — {t['status']}")
+        lines.append("")
+
+    text = "\n".join(lines).strip()
+    if slack_send(channel_id, text):
+        print(f"  notify-channel: sent with {len(assignees)} mentions")
     else:
         print(f"  notify-channel: failed")
 
