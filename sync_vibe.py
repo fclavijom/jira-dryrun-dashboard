@@ -55,11 +55,16 @@ MANAGER_MAP = {
 
 
 def get_token():
-    result = subprocess.run(
+    for cmd in [
+        ["usso", "-fetch", "t3", "-print"],
+        ["usso", "-fetch", "t3.uberinternal.com", "-print"],
         ["usso", "-print", "-ussh", "t3.uberinternal.com"],
-        capture_output=True, text=True, check=True,
-    )
-    return result.stdout.strip()
+    ]:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        token = next((l for l in result.stdout.splitlines() if l.startswith("eyJ")), None)
+        if token:
+            return token
+    raise RuntimeError("No T3 token available. Run: usso -fetch t3")
 
 
 def jira_get(token, path):
